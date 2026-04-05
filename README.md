@@ -2,7 +2,7 @@
 
 A comprehensive healthcare monitoring solution using two ESP32 microcontrollers. This system tracks vital signs (Heart Rate, SpO2, Body Temperature) and environmental conditions (Room Temperature) in real-time.
 
-## 🚀 Features
+## Features
 - **Dual-Board Architecture**: Uses ESP-NOW protocol for low-latency, low-power data transfer between a wearable unit and a master hub.
 - **Real-time Monitoring**: High-accuracy tracking via MAX30100 and DS18B20 sensors.
 - **Triple-Channel Alerting**:
@@ -11,12 +11,12 @@ A comprehensive healthcare monitoring solution using two ESP32 microcontrollers.
   - **Telegram Alerts**: Automatic emergency notifications for abnormal vitals.
 - **Secure Connection**: Integrated NTP time synchronization for SSL/TLS Firebase communication.
 
-## 🛠️ Hardware Requirements
+## Hardware Requirements
 - **Board A (Wearable)**: ESP32 (30-pin), MAX30100 Pulse Oximeter.
 - **Board B (Master Hub)**: ESP32 (38-pin), DHT22 (Room Temp/Hum), DS18B20 (Body Temp).
 - **Components**: 2x 4.7kΩ Resistors (for I2C and OneWire pull-ups), Breadboard, Jumper wires.
 
-## 🔌 Pin Mapping
+## Pin Mapping
 
 ### Board A (Wearable)
 | Sensor | ESP32 Pin |
@@ -30,7 +30,7 @@ A comprehensive healthcare monitoring solution using two ESP32 microcontrollers.
 | DHT22 Data | GPIO 27 | Requires 4.7kΩ Pull-up |
 | DS18B20 Data | GPIO 33 | Requires 4.7kΩ Pull-up |
 
-## ⚙️ Installation & Setup
+##Installation & Setup
 
 1. **Libraries**: Install the following in Arduino IDE:
    - `MAX30100_PulseOximeter`
