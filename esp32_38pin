@@ -1,0 +1,145 @@
+#include <esp_now.h>
+#include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <WebServer.h>
+#include <FirebaseESP32.h>
+#include <UniversalTelegramBot.h>
+#include <DHT.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include "time.h"
+
+#define WIFI_SSID "Sangavi@wifi"
+#define WIFI_PASSWORD "Sundar@#2015"
+#define FIREBASE_HOST "patienthealthsystem-ff63e-default-rtdb.firebaseio.com" 
+#define FIREBASE_AUTH "AIzaSyAkjaaIF-sELX0d1PGBlNFEAOA43W7ypzU"
+#define BOT_TOKEN "8628989440:AAFXNn59c3R93onEeVUpr3PVaAMuh-LQHzM"
+#define CHAT_ID "7383378446"
+
+#define DHTPIN 27      
+#define ONE_WIRE_BUS 33 
+
+FirebaseData fbdo;
+FirebaseAuth auth;
+FirebaseConfig config;
+DHT dht(DHTPIN, DHT22);
+OneWire oneWire(ONE_WIRE_BUS);
+DallasTemperature sensors(&oneWire);
+WebServer server(80);
+WiFiClientSecure tgClient;
+UniversalTelegramBot bot(BOT_TOKEN, tgClient);
+
+typedef struct struct_message {
+    float bpm;
+    float spo2;
+    bool fall;
+} struct_message;
+
+struct_message incomingData;
+float roomTemp = 0, bodyTemp = 0;
+unsigned long lastUpdate = 0;
+unsigned long lastTelegramTime = 0; 
+unsigned long lastPulseTime = 0; 
+bool fallDetectedLatch = false; 
+String globalAlert = "";
+
+void OnDataRecv(const esp_now_recv_info_t * recv_info, const uint8_t *incoming, int len) {
+  memcpy(&incomingData, incoming, sizeof(incomingData));
+  
+  if (incomingData.bpm > 10) lastPulseTime = millis();
+  if (incomingData.fall) fallDetectedLatch = true; // LATCH THE FALL
+
+  String alert = "";
+  if(incomingData.bpm > 120) alert += "⚠️ HIGH HEART RATE: " + String(incomingData.bpm) + " BPM\n";
+  if(incomingData.bpm < 50 && incomingData.bpm > 10) alert += "⚠️ LOW HEART RATE: " + String(incomingData.bpm) + " BPM\n";
+  if(incomingData.spo2 < 92 && incomingData.spo2 > 10) alert += "⚠️ LOW OXYGEN: " + String(incomingData.spo2) + "%\n";
+
+  if(alert != "" && (millis() - lastTelegramTime > 60000)) { 
+    globalAlert = alert;
+    lastTelegramTime = millis();
+  }
+}
+
+void handleRoot() {
+  String statusMsg = (fallDetectedLatch) ? "🚨 FALL DETECTED" : (globalAlert != "" ? "⚠️ " + globalAlert : "✅ PATIENT STABLE");
+  String bgColor = (fallDetectedLatch || globalAlert != "") ? "#ff4d4d" : "#2ecc71";
+  if (millis() - lastPulseTime > 120000) statusMsg = "📵 SENSOR DISCONNECTED";
+
+  String html = "<html><head><meta http-equiv='refresh' content='2'>";
+  html += "<style>body{font-family:Arial; background:#f0f2f5; text-align:center; padding:0; margin:0;}";
+  html += ".header{background:" + bgColor + "; color:white; padding:30px; font-size:24px; font-weight:bold;}";
+  html += ".card{background:white; border-radius:15px; padding:20px; margin:10px; width:180px; display:inline-block; border-top:10px solid #3498db;}";
+  html += "</style></head><body>";
+  html += "<div class='header'>" + statusMsg + "</div>";
+  html += "<h1>Live Medical Dashboard</h1>";
+  html += "<div class='card' style='border-top-color:#e74c3c'><h3>Heart Rate</h3><h2>" + String((int)incomingData.bpm) + "</h2>BPM</div>";
+  html += "<div class='card'><h3>Oxygen</h3><h2>" + String((int)incomingData.spo2) + "</h2>%</div><br>";
+  html += "<div class='card' style='border-top-color:#2ecc71'><h3>Body Temp</h3><h2>" + String(bodyTemp, 1) + "</h2>C</div>";
+  html += "<div class='card' style='border-top-color:#f39c12'><h3>Room Temp</h3><h2>" + String(roomTemp, 1) + "</h2>C</div>";
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+void setup() {
+  Serial.begin(115200);
+  dht.begin();
+  sensors.begin();
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+
+  configTime(0, 0, "pool.ntp.org");
+  tgClient.setInsecure(); 
+
+  if (esp_now_init() == ESP_OK) {
+    esp_now_register_recv_cb((esp_now_recv_cb_t)OnDataRecv);
+  }
+
+  config.host = FIREBASE_HOST;
+  config.signer.tokens.legacy_token = FIREBASE_AUTH;
+  Firebase.begin(&config, &auth);
+  
+  server.on("/", handleRoot);
+  server.begin();
+  lastPulseTime = millis();
+}
+
+void loop() {
+  server.handleClient();
+
+  // 1. PRIORITY FALL ALERT
+  if (fallDetectedLatch) {
+    if(bot.sendMessage(CHAT_ID, "EMERGENCY: Patient Fall Detected!", "")) {
+      fallDetectedLatch = false;
+      Serial.println("Fall Alert Sent!");
+    }
+  }
+
+  // 2. VITAL ALERTS & SENSOR OFFLINE
+  if (globalAlert != "") {
+    if(bot.sendMessage(CHAT_ID, " ALERT:\n" + globalAlert, "")) {
+      globalAlert = "";
+    }
+  }
+
+  if (millis() - lastPulseTime > 120000) {
+    bot.sendMessage(CHAT_ID, "📵 SENSOR OFFLINE: No signal for 2 mins.", "");
+    lastPulseTime = millis(); // Cooldown
+  }
+
+  // 3. FIREBASE SYNC
+  if (millis() - lastUpdate > 5000) {
+    roomTemp = dht.readTemperature();
+    sensors.requestTemperatures();
+    float bt = sensors.getTempCByIndex(0);
+    if(bt > -50) bodyTemp = bt; 
+
+    Firebase.setFloat(fbdo, "/Patient/BPM", incomingData.bpm);
+    Firebase.setFloat(fbdo, "/Patient/SpO2", incomingData.spo2);
+    Firebase.setFloat(fbdo, "/Patient/BodyTemp", bodyTemp);
+    Firebase.setFloat(fbdo, "/Patient/RoomTemp", roomTemp);
+    Firebase.setBool(fbdo, "/Patient/FallDetected", incomingData.fall);
+    
+    lastUpdate = millis();
+  }
+}
