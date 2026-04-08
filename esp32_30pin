@@ -1,0 +1,67 @@
+#include <esp_now.h>
+#include <WiFi.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_ADXL345_U.h>
+#include "MAX30100_PulseOximeter.h"
+
+uint8_t broadcastAddress[] = {0x88, 0x57, 0x21, 0xAD, 0xA5, 0x64}; 
+
+PulseOximeter pox;
+Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+
+uint32_t tsLastReport = 0;
+bool fallFlag = false; 
+
+typedef struct struct_message {
+    float bpm;
+    float spo2;
+    bool fall;
+} struct_message;
+
+struct_message myData;
+esp_now_peer_info_t peerInfo;
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.mode(WIFI_STA); 
+  Wire.begin(21, 22);
+
+  if (!pox.begin()) Serial.println("MAX30100 Fail");
+  if(!accel.begin()) Serial.println("ADXL345 Fail");
+  else accel.setRange(ADXL345_RANGE_16_G);
+
+  if (esp_now_init() != ESP_OK) return;
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+  esp_now_add_peer(&peerInfo);
+}
+
+void loop() {
+  pox.update();
+
+  sensors_event_t event; 
+  accel.getEvent(&event);
+  float totalAccel = sqrt(sq(event.acceleration.x) + sq(event.acceleration.y) + sq(event.acceleration.z));
+  
+  // Logic: 25.0 m/s^2 is the impact threshold
+  if(totalAccel > 25.0) { 
+    fallFlag = true;
+    Serial.println("!!! FALL DETECTED !!!");
+  }
+
+  if (millis() - tsLastReport > 2000) {
+    myData.bpm = pox.getHeartRate();
+    myData.spo2 = pox.getSpO2();
+    myData.fall = fallFlag; 
+
+    esp_now_send(broadcastAddress, (uint8_t *) &myData, sizeof(myData));
+    
+    Serial.print("BPM: "); Serial.print(myData.bpm);
+    Serial.print(" | Fall: "); Serial.println(myData.fall ? "YES" : "NO");
+    
+    fallFlag = false; // Reset latch after sending
+    tsLastReport = millis();
+  }
+}
