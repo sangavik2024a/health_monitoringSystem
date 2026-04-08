@@ -5,7 +5,7 @@
 #include <Adafruit_ADXL345_U.h>
 #include "MAX30100_PulseOximeter.h"
 
-uint8_t broadcastAddress[] = {0x88, 0x57, 0x21, 0xAD, 0xA5, 0x64}; 
+uint8_t broadcastAddress[] = {0xXX, 0xXX, 0xXX, 0xXX, 0xXX, 0xXX}; 
 
 PulseOximeter pox;
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
