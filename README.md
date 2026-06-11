@@ -46,19 +46,6 @@ A comprehensive healthcare monitoring solution using two ESP32 microcontrollers.
    - `FIREBASE_HOST` & `FIREBASE_AUTH`
    - `BOT_TOKEN` & `CHAT_ID` (from Telegram BotFather)
 
-<img width="1426" height="799" alt="kicad_schematic" src="https://github.com/user-attachments/assets/2f370ac0-a73c-43ea-8dcc-f9bb5e00de90" />
-
-<img width="435" height="279" alt="hardware_setup" src="https://github.com/user-attachments/assets/fe4f6e85-880a-490b-8050-03b75cf11e6f" />
-
-<img width="346" height="258" alt="perfboard_implementation" src="https://github.com/user-attachments/assets/3ae22d03-1106-4c5d-af5f-8d39837ba557" />
-
-<img width="371" height="221" alt="firebase_updates" src="https://github.com/user-attachments/assets/a069ac6f-897c-4146-b6c0-ac16de28bfd6" />
-  
-<img width="942" height="687" alt="website_localHost" src="https://github.com/user-attachments/assets/31023f07-6b38-4d22-bb17-ce630bb1206b" />
-
-<img width="236" height="524" alt="telegram_alertMsg" src="https://github.com/user-attachments/assets/6a621d4f-f3e3-438b-900d-7bce1a61d317" />
-
-
 5. **Firebase Rules**: Set your Realtime Database rules to `true` for initial testing:
    ```json
    {
@@ -68,6 +55,22 @@ A comprehensive healthcare monitoring solution using two ESP32 microcontrollers.
      }
    }
 
+<h3>Project Images</h3>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/2f370ac0-a73c-43ea-8dcc-f9bb5e00de90" width="450">
+  <img src="https://github.com/user-attachments/assets/fe4f6e85-880a-490b-8050-03b75cf11e6f" width="450">
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3ae22d03-1106-4c5d-af5f-8d39837ba557" width="450">
+  <img src="https://github.com/user-attachments/assets/a069ac6f-897c-4146-b6c0-ac16de28bfd6" width="450">
+</p>
+
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/31023f07-6b38-4d22-bb17-ce630bb1206b" width="450">
+  <img src="https://github.com/user-attachments/assets/6a621d4f-f3e3-438b-900d-7bce1a61d317" width="450">
+</p>
 
 
 
