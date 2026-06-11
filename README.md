@@ -54,11 +54,7 @@ A comprehensive healthcare monitoring solution using two ESP32 microcontrollers.
        ".write": "true"
      }
    }
-   <img width="643" height="468" alt="image" src="https://github.com/user-attachments/assets/9958855c-8994-4899-b369-c23a8c273766" />
-   <img width="368" height="818" alt="image" src="https://github.com/user-attachments/assets/891598e1-61cc-4ad4-a866-561705dea629" />
-   <img width="580" height="345" alt="image" src="https://github.com/user-attachments/assets/86076dee-e103-480f-b3fa-f076e06b14f7" />
-   <img width="680" height="436" alt="image" src="https://github.com/user-attachments/assets/821d2c2c-d832-409f-a186-742873d23768" />
-   <img width="541" height="403" alt="image" src="https://github.com/user-attachments/assets/624780ae-7a8a-4c31-aee4-5b9bc3690935" />
+
 
 
 
